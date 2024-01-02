@@ -79,24 +79,15 @@ pub fn main() !void {
         lang = try config_reader.readLang(lang_path);
     }
 
-    // Initialize information line with host name
-    var got_host_name = false;
-    var host_name_buffer: []u8 = undefined;
-
-    get_host_name: {
-        const host_name_struct = interop.getHostName(allocator) catch |err| {
-            if (err == error.CannotGetHostName) {
-                info_line = lang.ly.err_hostname;
-            } else {
-                info_line = lang.ly.err_alloc;
-            }
-            break :get_host_name;
-        };
-
-        got_host_name = true;
-        host_name_buffer = host_name_struct.buffer;
-        info_line = host_name_struct.slice;
-    }
+    const hostname = interop.getHostName(allocator) catch |err| {
+        if (err == error.CannotGetHostName) {
+            info_line = lang.ly.err_hostname;
+        } else {
+            info_line = lang.ly.err_alloc;
+        }
+    };
+    defer allocator.free(hostname.buffer);
+    info_line = hostname.slice;
 
     // Initialize termbox
     _ = termbox.tb_init();
@@ -506,8 +497,6 @@ pub fn main() !void {
             },
         }
     }
-
-    if (got_host_name) allocator.free(host_name_buffer);
 
     if (shutdown) {
         return std.process.execv(allocator, &[_][]const u8{ "/bin/sh", "-c", config.ly.shutdown_cmd });
