@@ -146,7 +146,7 @@ pub fn main() !void {
         const current_desktop = try reader.readIntLittle(u64);
 
         if (username_buffer.len > 0) {
-            try login.text.appendSlice(username_buffer);
+            try login.text.insertSlice(0, username_buffer);
             login.end = username_buffer.len;
         }
 
