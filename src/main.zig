@@ -136,9 +136,7 @@ pub fn main() !void {
         defer file.close();
 
         const reader = file.reader();
-        const username_length = try reader.readIntLittle(u64);
-
-        const username_buffer = try allocator.alloc(u8, username_length);
+        const username_buffer = try allocator.alloc(u8, config.ly.max_login_len);
         defer allocator.free(username_buffer);
 
         _ = try reader.read(username_buffer);
@@ -146,14 +144,13 @@ pub fn main() !void {
         const current_desktop = try reader.readIntLittle(u64);
 
         if (username_buffer.len > 0) {
-            try login.text.insertSlice(0, username_buffer);
-            login.end = username_buffer.len;
+            try login.write(username_buffer);
         }
 
         if (current_desktop < desktop.environments.items.len) desktop.current = current_desktop;
     }
 
-    var active_input = if (config.ly.default_input == .login and login.text.items.len != login.end) .password else config.ly.default_input;
+    var active_input = if (config.ly.default_input == .login and login.text.end != 0) .password else config.ly.default_input;
 
     // Place components on the screen
     {
